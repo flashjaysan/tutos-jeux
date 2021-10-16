@@ -360,7 +360,7 @@ right_score = 0
 
 #### Programme Complet
 
-Voici le programme complet tel que nous l'avons décrit jusqu'ici.
+Voici le [programme complet](src/pong_v1.bmx) tel que nous l'avons décrit jusqu'ici.
 
 ```
 SuperStrict
@@ -957,7 +957,7 @@ draw_right_score:Int(right_score, right_score_x, score_y)
 
 **Remarque :** Comme vous pouvez le constater, créer et utiliser ces fonctions n'a pas vraiment raccourci le code, bien au contraire. Cependant, la lecture du code est beaucoup plus claire maintenant et les instructions sont organisées dans des espaces bien spécifiques. En outre, le nom de chaque fonction décrit précisément ce qu'elle fait et la lecture du code en devient bien plus claire.
 
-Voici le code complet du programme.
+Voici le [code complet](src/pong_v2.bmx) du programme.
 
 ```
 SuperStrict
@@ -1569,7 +1569,7 @@ EndFunction
 start()
 ```
 
-Voici le code complet du programme en programmation orientée objet :
+Voici le [code complet](src/pong_v3.bmx) du programme en programmation orientée objet :
 
 ```
 SuperStrict
