@@ -1557,6 +1557,18 @@ Method CheckEndGame()
 EndMethod
 ```
 
+Une fois tous ces types définis, il faut pouvoir les utiliser. Pour ça, nous allons instancier le type `TPong` et appeler sa méthode `Start`. Et nous allons placer le tout dans une fonction `start`.
+
+```
+Function start: Int()
+	Local pong: TPong = New TPong(40, 5)
+	pong.Start()
+EndFunction
+
+
+start()
+```
+
 Voici le code complet du programme en programmation orientée objet :
 
 ```
@@ -1818,7 +1830,7 @@ EndType
 
 Function start: Int()
 	Local pong: TPong = New TPong(40, 5)
-	pong.start()
+	pong.Start()
 EndFunction
 ```
 
