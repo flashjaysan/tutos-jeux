@@ -8,13 +8,13 @@ Ce document est un tutoriel pour réaliser un clone du jeu Pong avec le langage 
 
 - Dans un premier temps, on réalisera le projet sans aucune organisation.
 - Puis on structurera le code dans des fonctions pour le rendre plus modulaire.
-- On passera ensuite à une organisation en objets.
+- On passera ensuite à une organisation via la programmation orientée objet.
 - On terminera par diverses optimisations.
 
 ## Choix techniques
 
-- Résolution 640x360 pixels en 16/9.
-- Positionnement inital des éléments sur une grille de tuiles de 40x40.
+- Résolution de 640x360 pixels en 16/9.
+- Positionnement inital des éléments sur une grille de 40x40 pixels constituée de 16x9 tuiles.
 - L'arrière plan est rempli d'une couleur verte (51, 152, 75).
 - Les paddles sont représentés par des rectangles de couleur bleue (0, 152, 220) d'1x3 tuiles.
 - La balle est représentée par un rectangle de couleur jaune (255, 200, 37) d'1x1 tuile.
@@ -31,8 +31,10 @@ On constate la nécessité d'utiliser les éléments suivants :
 - Paddle gauche : un rectangle de couleur de 1x3 cases.
 - Paddle droit : idem.
 - Balle : un carré de couleur de 1x1 case.
+- Score gauche : un texte.
+- Score droite : un texte.
 
-**Remarque :** La position des éléments sera représentée en réalité par le coin supérieur gauche de leur rectangle. Cela sera utile pour placer facilement les éléments sur la grille. En revanche, il faudra être vigilant par rapport au centre et aux bords des rectangles.
+**Remarque :** La position des éléments sera représentée en réalité par le coin supérieur gauche de leur rectangle. Cela sera utile pour placer facilement les éléments sur la grille. En revanche, il faudra être vigilant par rapport au centre et aux bords de ces rectangles.
 
 ## Tutoriel
 
@@ -52,13 +54,13 @@ On crée la fenêtre de jeu.
 Graphics(640, 360)
 ```
 
-Pour que le jeu ne se termine pas immédiatement, on crée la boucle de jeu. On utilise une boucle `While` avec une variable booléenne (`Int` dans BlitzMax) initialisée à `vrai`. Cela crée une boucle de jeu infinie tant que la variable est vraie. Si l'utilisateur ferme la fenêtre ou appuie sur la touche `ECHAP`, la variable prend la valeur `faux` et la boucle de jeu se termine.
+Pour que le jeu ne se termine pas immédiatement, on crée la boucle de jeu. On utilise une boucle `While` avec une variable booléenne (`Int` dans BlitzMax) initialisée à `vrai`. Cela crée une boucle de jeu infinie tant que la variable est vraie. Si l'utilisateur ferme la fenêtre, la variable prend la valeur `faux` et la boucle de jeu se termine.
 
 ```
 Local gameloop_running: Int = True
 
 While gameloop_running
-	gameloop_running = Not (AppTerminate() Or KeyDown(KEY_ESCAPE))
+	gameloop_running = Not AppTerminate()
 Wend
 ```
 
@@ -76,17 +78,17 @@ Wend
 
 #### Paddle gauche
 
-Comme on va placer les divers éléments sur la grille au départ, on définit une constante pour la taille des tuiles.
+Comme on va placer les divers éléments sur la grille au départ, on définit une variable `tile_size` pour représenter la taille des tuiles.
 
 ```
-Const TILE_SIZE: Int = 40
+Local tile_size: Int = 40
 ```
 
-On définit deux variables qui indiquent la position du paddle gauche. On utilise la taille des tuiles pour déterminer sa position à l'écran.
+On définit deux variables `left_paddle_x` et `left_paddle_y` qui indiquent la position du paddle gauche. On utilise la taille des tuiles pour déterminer sa position à l'écran.
 
 ```
-Local left_paddle_x: Float = TILE_SIZE
-Local left_paddle_y: Float = TILE_SIZE * 3
+Local left_paddle_x: Float = tile_size
+Local left_paddle_y: Float = tile_size * 3
 ```
 
 **Remarque :** Pourquoi le type `Float` ? Car si on applique un déplacement au paddle et qu'il n'est pas entier, lors de l'affectation à une variable de type entier, il sera converti en entier et la partie décimale sera perdue.
@@ -95,23 +97,23 @@ On dessine un rectangle de couleur bleue pour représenter le paddle gauche. Il 
 
 ```
 SetColor(0, 152, 220)
-DrawRect(left_paddle_x, left_paddle_y, TILE_SIZE, TILE_SIZE * 3)
+DrawRect(left_paddle_x, left_paddle_y, tile_size, tile_size * 3)
 ```
 
-Pour le mouvement, on crée une constante pour définir la vitesse des paddles.
+Pour le mouvement, on crée une variable `paddle_speed` pour définir la vitesse des paddles.
 
 ```
-Const PADDLE_SPEED: Float = 5
+Local paddle_speed: Float = 5
 ```
 
 Pour le mouvement du paddle gauche, on lui applique la vitesse, positivement ou négativement, selon la touche appuyée par le joueur.
 
 ```
 If KeyDown(KEY_Z)
-    left_paddle_y :- PADDLE_SPEED
+    left_paddle_y :- paddle_speed
 End If
 If KeyDown(KEY_S)
-    left_paddle_y :+ PADDLE_SPEED
+    left_paddle_y :+ paddle_speed
 End If
 ```
 
@@ -130,24 +132,24 @@ EndIf
 Pour le bord inférieur de l'écran, c'est plus compliqué. La position du paddle est représentée par le coin supérieur gauche du rectangle. Il faut donc vérifier si la position verticale est supérieure à trois case au dessus du bord inférieur de la fenêtre (le paddle faisant trois tuiles de haut) soit six cases du bord supérieur de la fenêtre. Si ce n'est pas le cas, on positionne le paddle au bord de cette case.
 
 ```
-If left_paddle_y > TILE_SIZE * 6
-    left_paddle_y = TILE_SIZE * 6
+If left_paddle_y > tile_size * 6
+    left_paddle_y = tile_size * 6
 EndIf
 ```
 
 #### Paddle droit
 
-On définit deux variables qui indiquent la position du paddle droit. A nouveau, on utilise la taille des tuiles pour déterminer sa position à l'écran.
+On définit deux variables `right_paddle_x` et `right_paddle_y` qui indiquent la position du paddle droit. A nouveau, on utilise la taille des tuiles pour déterminer sa position à l'écran.
 
 ```
-Local right_paddle_x: Float = TILE_SIZE * 14 
-Local right_paddle_y: Float = TILE_SIZE * 3
+Local right_paddle_x: Float = tile_size * 14 
+Local right_paddle_y: Float = tile_size * 3
 ```
 
 On dessine un rectangle de couleur bleue pour représenter le paddle droit. Il faut d'abord définir la couleur de dessin puis dessiner le rectangle.
 
 ```
-DrawRect(right_paddle_x, right_paddle_y, TILE_SIZE, TILE_SIZE * 3)
+DrawRect(right_paddle_x, right_paddle_y, tile_size, tile_size * 3)
 ```
 
 **Remarque :** Les deux paddles étant de la même couleur dans ce projet, il est inutile de définir la couleur de dessin pour le paddle droit. Bien entendu, si on venait à changer la couleur de dessin pour dessiner la balle, il faudrait modifier à nouveau cette couleur pour les autres éléments. Ici, on a choisi de dessiner les deux paddles avant de dessiner la balle pour éviter de modifier la couleur deux fois au lieu d'une.
@@ -162,10 +164,10 @@ Pour le mouvement du paddle droit, on lui applique la vitesse, positivement ou n
 
 ```
 If KeyDown(KEY_UP)
-    right_paddle_y :- PADDLE_SPEED
+    right_paddle_y :- paddle_speed
 End If
 If KeyDown(KEY_DOWN)
-    right_paddle_y :+ PADDLE_SPEED
+    right_paddle_y :+ paddle_speed
 End If
 ```
 
@@ -182,63 +184,64 @@ EndIf
 Pour le bord inférieur de l'écran, c'est plus compliqué. La position du paddle est représentée par le coin supérieur gauche du rectangle. Il faut donc vérifier si la position verticale est supérieure à trois case au dessus du bord inférieur de la fenêtre (le paddle faisant trois tuiles de haut) soit six cases du bord supérieur de la fenêtre. Si ce n'est pas le cas, on positionne le paddle au bord de cette case.
 
 ```
-If right_paddle_y > TILE_SIZE * 6
-    right_paddle_y = TILE_SIZE * 6
+If right_paddle_y > tile_size * 6
+    right_paddle_y = tile_size * 6
 EndIf
 ```
 
 #### Scores
 
-Chaque joueur a son propre score. On définit donc une variable pour chacun d'eux.
+Chaque joueur a son propre score. On définit donc deux variables `left_score` et `right_score` qu'on initialise à `0`.
 
 ```
 Local left_score: Int = 0
 Local right_score: Int = 0
 ```
 
-Pour afficher les score, on définit une position horizontale et verticale. La position verticale de ces deux scores étant la même, on définit une constante plutôt qu'une variable.
+Pour afficher les score, on définit une position horizontale avec les variables `left_score_x` et `right_score_x` et verticale. La position verticale de ces deux scores étant la même, on définit une seule variable `score_y`.
 
 ```
-Const SCORE_Y: Int = 10
-
 Local left_score_x: Int = 10
 Local right_score_x: Int = 620
+Local score_y: Int = 10
 ```
 
 On affiche les scores à l'écran en utilisant les différentes variables et constantes créées.
 
 ```
-DrawText(String(left_score), left_score_x, SCORE_Y)
-DrawText(String(right_score), right_score_x, SCORE_Y)
+DrawText(String(left_score), left_score_x, score_y)
+DrawText(String(right_score), right_score_x, score_y)
 ```
+
+**Remarque :** Les scores étant des entiers, il faut les convertir en chaînes avec la commande `String`.
 
 #### Balle
 
-On définit deux variables qui indiquent la position de la balle. A nouveau, on utilise la taille des tuiles pour déterminer sa position à l'écran.
+On définit deux variables `ball_x` et `ball_y` qui indiquent la position de la balle. A nouveau, on utilise la taille des tuiles pour déterminer sa position à l'écran.
 
 ```
-Local ball_x: Float = TILE_SIZE * 8
-Local ball_y: Float = TILE_SIZE * 4
+Local ball_x: Float = tile_size * 8
+Local ball_y: Float = tile_size * 4
 ```
 
-**Remarque :** Si vous êtes rigoureux, vous avez peut-être remarqué que la balle n'est pas tout à fait au centre de l'écran. Cela est dû au fait que notre résolution est composée d'une grille 16x9. Le nombre de cases horizontale étant pair, on ne peut pas positionner un élément au centre. Pour corriger ce problème, on peut soustraire à la position, la moitié de la taille de la balle (qui rappelons le, est de TILE_SIZE). Le problème ne se pose pas verticalement car la grille est constituée d'un nombre impair de cases verticalement.
+**Remarque :** Si vous êtes rigoureux, vous avez peut-être remarqué que la balle n'est pas tout à fait au centre de l'écran. Cela est dû au fait que notre résolution est composée d'une grille 16x9. Le nombre de cases horizontale étant pair, on ne peut pas positionner un élément au centre. Pour corriger ce problème, on peut soustraire à la position, la moitié de la taille de la balle (qui rappelons le, est de tile_size). Le problème ne se pose pas verticalement car la grille est constituée d'un nombre impair de cases verticalement.
 
 ```
-Local ball_x: Int = TILE_SIZE * 8 - TILE_SIZE / 2
+Local ball_x: Int = tile_size * 8 - tile_size / 2
 ```
 
 On dessine un rectangle de couleur jaune pour représenter la balle. Il faut d'abord définir la couleur de dessin puis dessiner le rectangle.
 
 ```
 SetColor(255, 200, 37)
-DrawRect(ball_x, ball_y, TILE_SIZE, TILE_SIZE)
+DrawRect(ball_x, ball_y, tile_size, tile_size)
 ```
 
-Pour le mouvement de la balle, on a besoin de deux variables. En effet, la balle peut se déplacer en diagonale et sa direction peut changer au cours du jeu. Pour augmenter la difficulté, on va choisir une valeur légèrement supérieure à celle des paddles.
+Pour le mouvement de la balle, on a besoin de deux variables `ball_speed_x` et `ball_speed_y`. En effet, la balle peut se déplacer en diagonale et sa direction peut changer au cours du jeu. Pour augmenter la difficulté, on va choisir une valeur légèrement supérieure à celle des paddles.
 
 ```
-Local ball_speed_x: Float = PADDLE_SPEED * 1.3
-Local ball_speed_y: Float = PADDLE_SPEED * 1.1
+Local ball_speed_x: Float = paddle_speed * 1.3
+Local ball_speed_y: Float = Ppaddle_speed * 1.1
 ```
 
 On applique le déplacement à la balle.
@@ -265,8 +268,8 @@ EndIf
 Pour le bord inférieur de l'écran, c'est plus compliqué. La position de la balle est représentée par le coin supérieur gauche du rectangle. Il faut donc vérifier si la position verticale est supérieure à une case au dessus du bord inférieur de la fenêtre (la balle faisant une tuile de haut) soit huit cases du bord supérieur de la fenêtre. Si ce n'est pas le cas, on positionne la balle au bord de cette case. On change également le signe de la valeur de déplacement vertical.
 
 ```
-If ball_y > TILE_SIZE * 8
-    ball_y = TILE_SIZE * 8
+If ball_y > tile_size * 8
+    ball_y = tile_size * 8
     ball_speed_y :* -1
 EndIf
 ```
@@ -275,8 +278,8 @@ Pour le bord gauche de l'écran, il suffit de vérifier que la position horizont
 
 ```
 If ball_x < 0
-    ball_x = TILE_SIZE * 8 - TILE_SIZE / 2
-    ball_y = TILE_SIZE * 4
+    ball_x = tile_size * 8 - tile_size / 2
+    ball_y = tile_size * 4
     ball_speed_x :* -1
 	right_score :+ 1
 EndIf
@@ -285,45 +288,12 @@ EndIf
 Pour le bord droit de l'écran, c'est plus compliqué. La position de la balle est représentée par le coin supérieur gauche du rectangle. Il faut donc vérifier si la position horizontale est supérieure à une case à gauche du bord droit de la fenêtre (la balle faisant une tuile de large) soit quinze cases du bord gauche de la fenêtre. Si ce n'est pas le cas, on positionne la balle au centre de l'écran. On change le signe de la valeur de déplacement horizontal. Enfin, on augmente le score du joueur gauche.
 
 ```
-If ball_x > TILE_SIZE * 15
-    ball_x = TILE_SIZE * 8 - TILE_SIZE / 2
-    ball_y = TILE_SIZE * 4
+If ball_x > tile_size * 15
+    ball_x = tile_size * 8 - tile_size / 2
+    ball_y = tile_size * 4
     ball_speed_x :* -1
 	left_score :+ 1
 EndIf
-```
-
-#### Fin de partie
-
-Lorsqu'un joueur marque 11 points, la partie est terminée. On doit réinitialiser les scores ainsi que les positions et directions des différents éléments.
-
-```
-If left_score >= 11 Or right_score >= 11
-
-EndIf
-```
-
-On réinitialise la position du paddle gauche et du paddle droit. Leur position horizontale étant permanente, on ne réinitialise que la position verticale.
-
-```
-left_paddle_x = TILE_SIZE
-right_paddle_x = TILE_SIZE * 14
-```
-
-On réinitialise la position de la balle ainsi que sa direction.
-
-```
-ball_x = TILE_SIZE * 8 - TILE_SIZE / 2
-ball_y = TILE_SIZE * 4
-ball_speed_x = PADDLE_SPEED * 1.3
-ball_speed_y = PADDLE_SPEED * 1.1
-```
-
-On réinitialise les scores.
-
-```
-left_score = 0
-right_score = 0
 ```
 
 #### Collisions
@@ -340,8 +310,8 @@ Deux rectangles alignés sur les axes entrent en contact lorsque toutes ces cond
 Pour le paddle gauche, on veut que la balle soit repositionnée à droite du paddle de manière à stopper la collision. Comme le paddle est positionné verticalement sur la grille, on peut placer la balle sur la colonne suivante dans la grille. On change également le sens de sa direction horizontale.
 
 ```
-If ball_x + TILE_SIZE > left_paddle_x And ball_x < left_paddle_x + TILE_SIZE And ball_y + TILE_SIZE > left_paddle_y And ball_y < left_paddle_y + TILE_SIZE * 3
-    ball_x = TILE_SIZE * 2
+If ball_x + tile_size > left_paddle_x And ball_x < left_paddle_x + tile_size And ball_y + tile_size > left_paddle_y And ball_y < left_paddle_y + tile_size * 3
+    ball_x = tile_size * 2
     ball_speed_x :* -1
 EndIf
 ```
@@ -349,10 +319,156 @@ EndIf
 Pour le paddle droite, on veut que la balle soit repositionnée à gauche du paddle de manière à stopper la collision. Comme le paddle est positionné verticalement sur la grille, on peut placer la balle sur la colonne précédente dans la grille. On change également le sens de sa direction horizontale.
 
 ```
-If ball_x + TILE_SIZE > right_paddle_x And ball_x < right_paddle_x + TILE_SIZE And ball_y + TILE_SIZE > right_paddle_y And ball_y < right_paddle_y + TILE_SIZE * 3
-    ball_x = TILE_SIZE * 13
+If ball_x + tile_size > right_paddle_x And ball_x < right_paddle_x + tile_size And ball_y + tile_size > right_paddle_y And ball_y < right_paddle_y + tile_size * 3
+    ball_x = tile_size * 13
     ball_speed_x :* -1
 EndIf
+```
+
+#### Fin de partie
+
+Lorsqu'un joueur marque 11 points, la partie est terminée. On doit réinitialiser les scores ainsi que les positions et directions des différents éléments.
+
+```
+If left_score >= 11 Or right_score >= 11
+
+EndIf
+```
+
+On réinitialise la position du paddle gauche et du paddle droit. Leur position horizontale étant permanente, on ne réinitialise que la position verticale.
+
+```
+left_paddle_x = tile_size
+right_paddle_x = tile_size * 14
+```
+
+On réinitialise la position de la balle ainsi que sa direction.
+
+```
+ball_x = tile_size * 8 - tile_size / 2
+ball_y = tile_size * 4
+ball_speed_x = paddle_speed * 1.3
+ball_speed_y = paddle_speed * 1.1
+```
+
+On réinitialise les scores.
+
+```
+left_score = 0
+right_score = 0
+```
+
+#### Programme Complet
+
+Voici le programme complet tel que nous l'avons décrit jusqu'ici.
+
+```
+SuperStrict
+
+Local tile_size: Int = 40
+Local paddle_speed: Float = 5
+
+Local left_paddle_x: Float = tile_size
+Local left_paddle_y: Float = tile_size * 3
+
+Local right_paddle_x: Float = tile_size * 14 
+Local right_paddle_y: Float = tile_size * 3
+
+Local ball_x: Float = tile_size * 8 - tile_size / 2
+Local ball_y: Float = tile_size * 4
+Local ball_speed_x: Float = paddle_speed * 1.3
+Local ball_speed_y: Float = paddle_speed * 1.1
+
+Local left_score: Int = 0
+Local right_score: Int = 0
+Local left_score_x: Int = 10
+Local right_score_x: Int = 620
+Local score_y: Int = 10
+
+Graphics(640, 360)
+
+SetClsColor(51, 152, 75)
+
+Local gameloop_running: Int = True
+
+While gameloop_running
+	gameloop_running = Not AppTerminate()
+	
+	If KeyDown(KEY_Z)
+		left_paddle_y :- paddle_speed
+	EndIf
+	If KeyDown(KEY_S)
+		left_paddle_y :+ paddle_speed
+	EndIf
+	If left_paddle_y < 0
+		left_paddle_y = 0
+	EndIf
+	If left_paddle_y > tile_size * 6
+		left_paddle_y = tile_size * 6
+	EndIf
+	If KeyDown(KEY_UP)
+		right_paddle_y :- paddle_speed
+	End If
+	If KeyDown(KEY_DOWN)
+		right_paddle_y :+ paddle_speed
+	EndIf
+	If right_paddle_y < 0
+		right_paddle_y = 0
+	EndIf
+	If right_paddle_y > tile_size * 6
+		right_paddle_y = tile_size * 6
+	EndIf
+	ball_x :+ ball_speed_x
+	ball_y :+ ball_speed_y
+	If ball_y < 0
+		ball_y = 0
+		ball_speed_y :* -1
+	EndIf
+	If ball_y > tile_size * 8
+		ball_y = tile_size * 8
+		ball_speed_y :* -1
+	EndIf
+	If ball_x < 0
+		ball_x = tile_size * 8 - tile_size / 2
+		ball_y = tile_size * 4
+		ball_speed_x :* -1
+		right_score :+ 1
+	EndIf
+	If ball_x > tile_size * 15
+		ball_x = tile_size * 8 - tile_size / 2
+		ball_y = tile_size * 4
+		ball_speed_x :* -1
+		left_score :+ 1
+	EndIf
+	If ball_x + tile_size > left_paddle_x And ball_x < left_paddle_x + tile_size And ball_y + tile_size > left_paddle_y And ball_y < left_paddle_y + tile_size * 3
+		ball_x = tile_size * 2
+		ball_speed_x :* -1
+	EndIf
+	If ball_x + tile_size > right_paddle_x And ball_x < right_paddle_x + tile_size And ball_y + tile_size > right_paddle_y And ball_y < right_paddle_y + tile_size * 3
+		ball_x = tile_size * 13
+		ball_speed_x :* -1
+	EndIf
+	If left_score >= 11 Or right_score >= 11
+		left_paddle_x = tile_size
+		right_paddle_x = tile_size * 14 
+		ball_x = tile_size * 8 - tile_size / 2
+		ball_y = tile_size * 4
+		ball_speed_x = paddle_speed * 1.3
+		ball_speed_y = paddle_speed * 1.1
+		left_score = 0
+		right_score = 0
+	EndIf
+	
+	Cls()
+	SetColor(0, 152, 220)
+	DrawRect(left_paddle_x, left_paddle_y, tile_size, tile_size * 3)
+	DrawRect(right_paddle_x, right_paddle_y, tile_size, tile_size * 3)
+	SetColor(255, 200, 37)
+	DrawRect(ball_x, ball_y, tile_size, tile_size)
+	DrawText(String(left_score), left_score_x, score_y)
+	DrawText(String(right_score), right_score_x, score_y)
+	Flip()
+Wend
 ```
 
 ### Programmation procédurale
@@ -364,6 +480,8 @@ EndIf
 
 
 ### Optimisation
+
+ ou appuie sur la touche `ECHAP` pour quitter la boucle de jeu.
 
 Utilisation de constantes.
 
