@@ -4,6 +4,8 @@ par *flashjaysan*
 
 ## Introduction
 
+![Démo BlitzMax Pong](img/blitzmax_pong_demo.gif)
+
 Ce document est un tutoriel pour réaliser un clone du jeu Pong avec le langage BlitzMax. Le document est prévu pour être suivi dans l'ordre et propose une approche progressive et continue d'amélioration du code.
 
 - Dans un premier temps, on réalisera le projet sans aucune organisation.
