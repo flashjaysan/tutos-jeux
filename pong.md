@@ -1838,19 +1838,1464 @@ EndFunction
 
 Nous avons bien organisé notre code en répartissant les rôles de chaque élement dans un type séparé. Mais nous pouvons encore améliorer notre code pour le rendre plus sûr et lisible.
 
+#### Découpe en plusieurs fichiers sources
+
+Nous allons placer chaque type dans un fichier source séparé.
+
+- Un fichier `tpaddle.bmx` pour le type `TPaddle`.
+- Un fichier `tball.bmx` pour le type `TBall`.
+- Un fichier `tscore.bmx` pour le type `TScore`.
+- Un fichier `tpong.bmx` pour le type `TPong`.
+
+**Remarque :** Chaque fichier doit comporter l'instruction `SuperStrict` pour que le compilateur nous oblige à déclarer et à typer les variables et les fonctions.
+
+Le fichier `tpaddle.bmx` :
+
+```
+SuperStrict
+
+
+Type TPaddle
+	Field x: Float
+	Field y: Float
+	Field initial_y: Float
+	Field width: Int
+	Field height: Int
+	Field speed: Float
+	Field min_y: Float
+	Field max_y: Float
+	Field key_up: Int
+	Field key_down: Int
+	
+	
+	Method New(x: Float, y: Float, width: Int, height: Int, speed: Float, min_y: Float, max_y: Float, key_up: Int, key_down: Int)
+		Self.x = x
+		Self.y = y
+		initial_y = y
+		Self.width = width
+		Self.height = height
+		Self.speed = speed
+		Self.min_y = min_y
+		Self.max_y = max_y
+		Self.key_up = key_up
+		Self.key_down = key_down
+	EndMethod
+	
+	
+	Method Initialize()
+		y = initial_y
+	EndMethod
+	
+	
+	Method Update()
+		If KeyDown(key_up)
+			y :- speed
+		EndIf
+		If KeyDown(key_down)
+			y :+ speed
+		EndIf
+		If y < min_y
+			y = min_y
+		EndIf
+		If y > max_y
+			y = max_y
+		EndIf
+	EndMethod
+	
+	
+	Method Draw()
+		DrawRect(x, y, width, height)
+	EndMethod
+EndType
+```
+
+Le fichier `tball.bmx` :
+
+```
+SuperStrict
+
+
+Type TBall	
+	Field x: Float
+	Field y: Float
+	Field initial_x: Float
+	Field initial_y: Float
+	Field width: Int
+	Field height: Int
+	Field speed_x: Float
+	Field speed_y: Float
+	Field min_x: Int
+	Field max_x: Int
+	Field min_y: Int
+	Field max_y: Int
+	Field left_goal: Int
+	Field right_goal: Int
+	
+	
+	Method New(x: Float, y: Float, width: Int, height: Int, speed_x: Float, speed_y: Float, min_x: Float, max_x: Float, min_y: Float, max_y: Float)
+		Self.x = x
+		Self.y = y
+		initial_x = x
+		initial_y = y
+		Self.width = width
+		Self.height = height
+		Self.speed_x = speed_x
+		Self.speed_y = speed_y
+		Self.min_x = min_x
+		Self.max_x = max_x
+		Self.min_y = min_y
+		Self.max_y = max_y
+		left_goal = False
+		right_goal = False
+	EndMethod
+	
+	
+	Method Initialize(speed_x: Float, speed_y: Float)
+		x = initial_x
+		y = initial_y
+		Self.speed_x = speed_x
+		Self.speed_y = speed_y
+	EndMethod
+	
+	
+	Method Update()
+		x :+ speed_x
+		y :+ speed_y
+		If y < min_y
+			y = min_y
+			speed_y :* -1
+		EndIf
+		If y > max_y
+			y = max_y
+			speed_y :* -1
+		EndIf
+		left_goal = x < min_x
+		If left_goal
+			x = initial_x
+			y = initial_y
+			speed_x :* -1
+		EndIf
+		right_goal = x > max_x
+		If right_goal
+			x = initial_x
+			y = initial_y
+			speed_x :* -1
+		EndIf
+	EndMethod
+	
+	
+	Method Draw()
+		DrawRect(x, y, width, height)
+	EndMethod
+EndType
+```
+
+Le fichier `tscore.bmx` :
+
+```
+SuperStrict
+
+
+Type TScore
+	Field value: Int
+	Field x: Int
+	Field y: Int
+	
+	
+	Method New(x: Int, y: Int)
+		value = 0
+		Self.x = x
+		Self.y = y
+	EndMethod
+	
+	
+	Method Initialize()
+		value = 0
+	EndMethod
+	
+	
+	Method Add(value: Int)
+		Self.value :+ value
+	EndMethod
+	
+	
+	Method Draw()
+		DrawText(String(value), x, y)
+	EndMethod
+EndType
+```
+
+Le fichier `tpong.bmx` :
+
+```
+SuperStrict
+
+Import "tpaddle.bmx"
+Import "tball.bmx"
+Import "tscore.bmx"
+
+
+Type TPong
+	Field tile_size: Int
+	Field paddle_speed: Int
+	
+	Field left_paddle: TPaddle
+	Field right_paddle: TPaddle
+	Field ball: TBall
+	Field left_score: TScore
+	Field right_score: TScore
+	
+	
+	Method New(tile_size: Int, paddle_speed: Int)
+		Self.tile_size = tile_size
+		Self.paddle_speed = paddle_speed
+		
+		left_paddle = New TPaddle(tile_size, tile_size * 3, tile_size, tile_size * 3, paddle_speed, 0, tile_size * 6, KEY_Z, KEY_S)
+		right_paddle = New TPaddle(tile_size * 14, tile_size * 3, tile_size, tile_size * 3, paddle_speed, 0, tile_size * 6, KEY_UP, KEY_DOWN)
+		ball = New TBall(tile_size * 8 - tile_size / 2, tile_size * 4, tile_size, tile_size, paddle_speed * 1.3, paddle_speed * 1.1, 0, tile_size * 15, 0, tile_size * 8)
+		left_score = New TScore(10, 10)
+		right_score = New TScore(620, 10)
+		
+		Graphics(640, 360)
+		SetClsColor(51, 152, 75)
+	EndMethod
+	
+	
+	Method Start()
+		Local gameloop_running: Int = True
+
+		While gameloop_running
+			gameloop_running = Not AppTerminate()
+			
+			Update()
+			Draw()
+		Wend
+	EndMethod
+	
+	
+	Method Update()
+		left_paddle.Update()
+		right_paddle.Update()
+		ball.Update()
+		If ball.left_goal
+			right_score.Add(1)
+		EndIf
+		If ball.right_goal
+			left_score.Add(1)
+		EndIf
+		CheckCollisions()
+		CheckEndGame()
+	EndMethod
+	
+	
+	Method Draw()
+		Cls()
+		SetColor(0, 152, 220)
+		left_paddle.Draw()
+		right_paddle.Draw()
+		SetColor(255, 200, 37)
+		ball.Draw()
+		left_score.Draw()
+		right_score.Draw()
+		Flip()
+	EndMethod
+	
+	
+	Method Initialize:Int()
+		left_paddle.Initialize()
+		right_paddle.Initialize() 
+		ball.Initialize(paddle_speed * 1.3, paddle_speed * 1.1) 
+		left_score.Initialize()
+		right_score.Initialize()
+	EndMethod
+	
+	
+	Method CheckCollisions()
+		If ball.x + ball.width > left_paddle.x And ball.x < left_paddle.x + left_paddle.width And ball.y + ball.height > left_paddle.y And ball.y < left_paddle.y + left_paddle.height
+			ball.x = left_paddle.x + left_paddle.width
+			ball.speed_x :* -1
+		EndIf
+		If ball.x + ball.width > right_paddle.x And ball.x < right_paddle.x + right_paddle.width And ball.y + ball.height > right_paddle.y And ball.y < right_paddle.y + right_paddle.height
+			ball.x = right_paddle.x - ball.width
+			ball.speed_x :* -1
+		EndIf
+	EndMethod
+	
+	
+	Method CheckEndGame()
+		If left_score.value >= 11 Or right_score.value >= 11
+			Initialize()
+		EndIf
+	EndMethod
+EndType
+```
+
+**Remarque :** Le fichier `tpong.bmx` utilise les types `TPaddle`, `TBall` et `TScore`. C'est pourquoi on trouve les instructions `Import` au début du code.
+
+Le fichier principal qui correspond au point d'entrée du programme est beaucoup concis. Il n'utilise que le type `TPong`. C'est pourquoi on ne trouve qu'une seule instruction `Import` dans le code.
+
+```
+SuperStrict
+
+Import "tpong.bmx"
+
+
+Function start: Int()
+	Local pong: TPong = New TPong(40, 5)
+	pong.Start()
+EndFunction
+
+
+start()
+```
+
+#### Encapsulation
+
+Les champs des différents types sont accessibles depuis l'extérieur. Ce n'est pas une bonne pratique. Nous allons les rendre privés.
+
+```
+Type TPaddle
+	Private
+		[Champs]
+	
+	Public
+		[Méthodes]
+EndType
+```
+
+```
+Type TBall
+	Private
+		[Champs]
+	
+	Public
+		[Méthodes]
+EndType
+```
+
+```
+Type TScore
+	Private
+		[Champs]
+	
+	Public
+		[Méthodes]
+EndType
+```
+
+```
+Type TPong
+	Private
+		[Champs]
+	
+	Public
+		[Méthodes]
+EndType
+```
+
+Les champs des différents types ne sont plus accessibles en dehors. Il nous faut donc ajuster certains détails pour que le programme fonctionne à nouveau.
+
+Les champs `left_goal` et `right_goal` du typr `TBall` sont utilisés dans le type `TPong`. Nous allons créer les méthodes `IsLeftGoal` et `IsRightGoal` dans le type `TBall` pour permettre au type `TPong` de contrôler leur état.
+
+```
+Method IsLeftGoal: Int()
+	Return left_goal
+EndMethod
+
+
+Method IsRightGoal: Int()
+	Return right_goal
+EndMethod
+```
+
+Modifiez la méthode `Update` du type `TPong` pour appelez les méthodes `IsLeftGoal` et `IsRightGoal` au lieu d'accéder directement aux champs `left_goal` et `right_goal`.
+
+```
+Method Update()
+	left_paddle.Update()
+	right_paddle.Update()
+	ball.Update()
+	If ball.IsLeftGoal()
+		right_score.Add(1)
+	EndIf
+	If ball.IsRightGoal()
+		left_score.Add(1)
+	EndIf
+	CheckCollisions()
+	CheckEndGame()
+EndMethod
+```
+
+**Remarque :** Notez que désormais, le type `TPong` ne peut plus modifier les champs `left_goal` et `right_goal`. Elle ne peut que lire leur valeur au travers des méthodes `IsLeftGoal` et `IsRightGoal`.
+
+La méthode `CheckEndGame` du type `TPong` essaie d'accéder au champ privé `value` du type `TScore`. Nous allons créer la méthode `GetValue` dans le type `TScore` pour permettre au type `TPong` de lire la valeur du champ `Value`.
+
+```
+Method GetValue: Int()
+	Return value
+EndMethod
+```
+
+Modifiez la méthode `CheckEndGame` du type `TPong` pour appelez la méthode `GetValue` au lieu d'accéder directement au champ privé `value`.
+
+```
+Method CheckEndGame()
+	If left_score.GetValue() >= 11 Or right_score.GetValue() >= 11
+		Initialize()
+	EndIf
+EndMethod
+```
+
+Le plus compliqué reste la méthode `CheckCollisions` du type `TPong`. En effet, cette méthode tente d'accéder aux champs privés suivants :
+
+- `x` du type `TPaddle`.
+- `y` du type `TPaddle`.
+- `width` du type `TPaddle`.
+- `height` du type `TPaddle`.
+- `x` du type `TBall`. La méthode souhaite également modifier ce champ.
+- `y` du type `TBall`.
+- `height` du type `TBall`.
+- `width` du type `TBall`.
+- `speed_x` du type `TBall`. La méthode souhaite également modifier ce champ.
+
+Nous allons créer dans ces deux types des méthodes pour accéder à ces champs en lecture.
+
+Dans le type `TPaddle`, créez les méthodes suivantes :
+
+```
+Method GetX: Float()
+	Return x
+EndMethod
+
+
+Method GetY: Float()
+	Return y
+EndMethod
+
+
+Method GetWidth: Int()
+	Return width
+EndMethod
+
+
+Method GetHeight: Int()
+	Return height
+EndMethod
+```
+
+Dans le type `TBall`, créez les méthodes suivantes :
+
+```
+Method GetX: Float()
+	Return x
+EndMethod
+
+
+Method GetY: Float()
+	Return y
+EndMethod
+
+
+Method GetWidth: Int()
+	Return width
+EndMethod
+
+
+Method GetHeight: Int()
+	Return height
+EndMethod
+```
+
+Nous devons également créer des méthodes pour autoriser le type `TPong` à modifier les champs `x` et `speed_x` du type `TBall`.
+
+Dans le type `TBall`, créez les méthodes suivantes :
+
+```
+Method SetX(new_value: Float)
+	x = new_value
+EndMethod
+
+
+Method GetSpeedX: Float()
+	Return speed_x
+EndMethod
+
+
+Method SetSpeedX(new_value: Float)
+	speed_x = new_value
+EndMethod
+```
+
+**Remarque :** Nous avons créé une méthode `GetSpeedX` car nous ne pouvons plus changer le signe du champ speed_x directement.
+
+Enfin, modifiez la méthode `CheckCollisions` du type `TPong` pour utiliser les méthodes au lieu des champs.
+
+```
+Method CheckCollisions()
+	If ball.GetX() + ball.GetWidth() > left_paddle.GetX() And ball.GetX() < left_paddle.GetX() + left_paddle.GetWidth() And ball.GetY() + ball.GetHeight() > left_paddle.GetY() And ball.GetY() < left_paddle.GetY() + left_paddle.GetHeight()
+		ball.SetX(left_paddle.GetX() + left_paddle.GetWidth())
+		ball.SetSpeedX(-ball.GetSpeedX())
+	EndIf
+	If ball.GetX() + ball.GetWidth() > right_paddle.GetX() And ball.GetX() < right_paddle.GetX() + right_paddle.GetWidth() And ball.GetY() + ball.GetHeight() > right_paddle.GetY() And ball.GetY() < right_paddle.GetY() + right_paddle.GetHeight()
+		ball.SetX(right_paddle.GetX() - ball.GetWidth())
+		ball.SetSpeedX(-ball.GetSpeedX())
+	EndIf
+EndMethod
+```
+
+#### Utilisation de vecteurs
+
+Les paddles, la balle et les scores possèdent chacun une position. Au lieu de définir deux variables pour représenter cette position, nous allons utiliser un vecteur à deux dimensions. Les positions étant représentées sous forme de nombre à virgule flottante pour les types `TBall` et `TPaddle`, nous utiliserons le type `SVec2F`.
+
+**Remarque :** Les types `SVec2I` et `SVec2F` sont des structures et non des classes. On ne peut pas modifier les champs d'une structure. On doit créer une nouvelle instance.
+
+Modifiez le type `TPaddle` comme ceci :
+
+```
+Type TPaddle
+	Private
+		Field position: SVec2F
+		Field initial_y: Float
+		Field width: Int
+		Field height: Int
+		Field speed: Float
+		Field min_y: Float
+		Field max_y: Float
+		Field key_up: Int
+		Field key_down: Int
+
+
+	Public
+		Method New(x: Float, y: Float, width: Int, height: Int, speed: Float, min_y: Float, max_y: Float, key_up: Int, key_down: Int)
+			position = New SVec2F(x, y)
+			initial_y = position.y
+			Self.width = width
+			Self.height = height
+			Self.speed = speed
+			Self.min_y = min_y
+			Self.max_y = max_y
+			Self.key_up = key_up
+			Self.key_down = key_down
+		EndMethod
+		
+		
+		Method Initialize()
+			position = New SVec2F(position.x, initial_y)
+		EndMethod
+		
+		
+		Method Update()
+			If KeyDown(key_up)
+				position = New SVec2F(position.x, position.y - speed)
+			EndIf
+			If KeyDown(key_down)
+				position = New SVec2F(position.x, position.y + speed)
+			EndIf
+			If position.y < min_y
+				position = New SVec2F(position.x, min_y)
+			EndIf
+			If position.y > max_y
+				position = New SVec2F(position.x, max_y)
+			EndIf
+		EndMethod
+		
+		
+		Method Draw()
+			DrawRect(position.x, position.y, width, height)
+		EndMethod
+		
+		
+		Method GetX: Float()
+			Return position.x
+		EndMethod
+		
+		
+		Method GetY: Float()
+			Return position.y
+		EndMethod
+		
+		
+		...
+EndType
+```
+
+Pour le type `TBall`, on peut également stocker les limites minimales et maximales dans deux vecteurs `SVec2I` et la vitesse horizontale et verticale (la *vélocité*) dans un vecteur `SVec2F`.
+
+Modifiez le type `TBall` comme ceci :
+
+```
+Type TBall
+	Private
+		Field position: SVec2F
+		Field initial_position: SVec2F
+		Field width: Int
+		Field height: Int
+		Field velocity: SVec2F
+		Field min_position: SVec2I
+		Field max_position: SVec2I
+		Field left_goal: Int
+		Field right_goal: Int
+
+
+	Public
+		Method New(x: Float, y: Float, width: Int, height: Int, speed_x: Float, speed_y: Float, min_x: Int, max_x: Int, min_y: Int, max_y: Int)
+			position = New SVec2F(x, y)
+			initial_position = position
+			Self.width = width
+			Self.height = height
+			velocity = New SVec2F(speed_x, speed_y)
+			min_position = New SVec2I(min_x, min_y)
+			max_position = New SVec2I(max_x, max_y)
+			left_goal = False
+			right_goal = False
+		EndMethod
+		
+		
+		Method Initialize(speed_x: Float, speed_y: Float)
+			position = initial_position
+			velocity = New SVec2F(speed_x, speed_y)
+		EndMethod
+		
+		
+		Method Update()
+			position = New SVec2F(position.x + velocity.x, position.y + velocity.y)
+			If position.y < min_position.y
+				position = New SVec2F(position.x, min_position.y)
+				velocity = New SVec2F(velocity.x, -velocity.y)
+			EndIf
+			If position.y > max_position.y
+				position = New SVec2F(position.x, max_position.y)
+				velocity = New SVec2F(velocity.x, -velocity.y)
+			EndIf
+			left_goal = position.x < min_position.x
+			If left_goal
+				position = initial_position
+				velocity = New SVec2F(-velocity.x, velocity.y)
+			EndIf
+			right_goal = position.x > max_position.x
+			If right_goal
+				position = initial_position
+				velocity = New SVec2F(-velocity.x, velocity.y)
+			EndIf
+		EndMethod
+		
+		
+		Method Draw()
+			DrawRect(position.x, position.y, width, height)
+		EndMethod
+		
+		
+		...
+		
+		
+		Method GetX: Float()
+			Return position.x
+		EndMethod
+		
+		
+		Method SetX(new_value: Float)
+			position = New SVec2F(new_value, position.y)
+		EndMethod
+		
+		
+		Method GetY: Float()
+			Return position.y
+		EndMethod
+		
+		
+		...
+
+
+		Method GetSpeedX: Float()
+			Return velocity.x
+		EndMethod
+		
+		
+		Method SetSpeedX(new_value: Float)
+			velocity = New SVec2F(new_value, velocity.y)
+		EndMethod
+EndType
+```
+
+Pour le type `TScore` nous utiliserons le type `SVec2I`. Modifiez ce type comme ceci :
+
+```
+Type TScore
+	Private
+		Field value: Int
+		Field position: SVec2I
+	
+	
+	Public
+		Method New(x: Int, y: Int)
+			value = 0
+			position = New SVec2I(x, y)
+		EndMethod
+		
+		
+		...
+		
+		
+		Method Draw()
+			DrawText(String(value), position.x, position.y)
+		EndMethod
+		
+		
+		...
+EndType
+```
+
+#### Direction aléatoire de la balle
+
+Jusqu'ici, nous avions déterminé en dur (directement dans le code) la direction de la balle. Nous allons maintenant utiliser le vecteur `velocity` pour déterminer une direction aléatoire.
+
+Tout d'abord, nous devons modifier les champs du type `TBall`. Nous allons ajouter un champ `speed` pour définir la vitesse de la balle et un champ `max_angle` pour définir la déviation aléatoire maximale.
+
+```
+Type TBall
+	Private
+		Field position: SVec2F
+		Field initial_position: SVec2F
+		Field width: Int
+		Field height: Int
+		Field speed: Float
+		Field max_angle: Float
+		Field velocity: SVec2F
+		Field min_position: SVec2I
+		Field max_position: SVec2I
+		Field left_goal: Int
+		Field right_goal: Int
+
+
+		...
+EndType
+```
+
+Nous devons également modifier la méthode `New` du type `TBall` pour ne prendre qu'une seule valeur de vitesse et une déviation aléatoire maximale.
+
+```
+Method New(x: Float, y: Float, width: Int, height: Int, speed: Float, max_angle: Float, min_x: Int, max_x: Int, min_y: Int, max_y: Int)
+	position = New SVec2F(x, y)
+	initial_position = position
+	Self.width = width
+	Self.height = height
+	Self.speed = speed
+	Self.max_angle = max_angle
+	
+	min_position = New SVec2I(min_x, min_y)
+	max_position = New SVec2I(max_x, max_y)
+	left_goal = False
+	right_goal = False
+EndMethod
+```
+
+Bien entendu, il faut également modifier l'appel à cette méthode dans le constructeur du type `TPong`.
+
+```
+Method New(tile_size: Int, paddle_speed: Int)
+	Self.tile_size = tile_size
+	Self.paddle_speed = paddle_speed
+	
+	left_paddle = New TPaddle(tile_size, tile_size * 3, tile_size, tile_size * 3, paddle_speed, 0, tile_size * 6, KEY_Z, KEY_S)
+	right_paddle = New TPaddle(tile_size * 14, tile_size * 3, tile_size, tile_size * 3, paddle_speed, 0, tile_size * 6, KEY_UP, KEY_DOWN)
+	ball = New TBall(tile_size * 8 - tile_size / 2, tile_size * 4, tile_size, tile_size, paddle_speed * 1.7, 60.0, 0, tile_size * 15, 0, tile_size * 8)
+	left_score = New TScore(10, 10)
+	right_score = New TScore(620, 10)
+	
+	Graphics(SCREEN_WIDTH, SCREEN_HEIGHT)
+	SetClsColor(51, 152, 75)
+EndMethod
+```
+
+Nous allons ensuite initialiser le vecteur `velocity` orienté vers la droite avec la vitesse passée en argument.
+
+```
+velocity = New SVec2F(speed, 0)
+```
+
+**Remarque :** Pourquoi vers la droite ? Tout simplement car c'est la direction la plus simple à utiliser quand on veut faire pivoter un vecteur. Dans BlitzMax, les types vecteurs fournissent justement des méthodes pour les faire pivoter.
+
+Nous allons maintenant faire pivoter le vecteur grâce à sa méthode `Rotate`. Pour cela, nous allons utiliser la commande `Rnd` pour déterminer aléatoirement la rotation à appliquer au vecteur `velocity`.
+
+```
+velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+```
+
+Cela donne le constructeur suivant du type `TBall` :
+
+```
+Method New(x: Float, y: Float, width: Int, height: Int, speed: Float, max_angle: Float, min_x: Int, max_x: Int, min_y: Int, max_y: Int)
+	position = New SVec2F(x, y)
+	initial_position = position
+	Self.width = width
+	Self.height = height
+	Self.speed = speed
+	Self.max_angle = max_angle
+	velocity = New SVec2F(speed, 0)
+	velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+	min_position = New SVec2I(min_x, min_y)
+	max_position = New SVec2I(max_x, max_y)
+	left_goal = False
+	right_goal = False
+EndMethod
+```
+
+Nous devons faire de même pour la méthode `Initialize` du type `TBall`.
+
+```
+Method Initialize(speed_x: Float, speed_y: Float)
+	position = initial_position
+	velocity = New SVec2F(speed, 0)
+	velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+EndMethod
+```
+
+Nous devons gérer les changements de directions dans la méthode `Update` du type `TBall`.
+
+```
+Method Update()
+	position = New SVec2F(position.x + velocity.x, position.y + velocity.y)
+	If position.y < min_position.y
+		position = New SVec2F(position.x, min_position.y)
+		velocity = New SVec2F(velocity.x, -velocity.y)
+	EndIf
+	If position.y > max_position.y
+		position = New SVec2F(position.x, max_position.y)
+		velocity = New SVec2F(velocity.x, -velocity.y)
+	EndIf
+	left_goal = position.x < min_position.x
+	If left_goal
+		position = initial_position
+		velocity = New SVec2F(speed, 0)
+		velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+	EndIf
+	right_goal = position.x > max_position.x
+	If right_goal
+		position = initial_position
+		velocity = New SVec2F(-speed, 0)
+		velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+	EndIf
+EndMethod
+```
+
+Comme on utilise la commande `Rnd`, nous devons définir la *graine* aléatoire pour s'assurer que la génération de valeurs aléatoires soit bien unique à chaque exécution. Pour cela on ajoute l'instruction `SeedRnd(MilliSecs())` à la fonction principale.
+
+```
+Function start: Int()
+	SeedRnd(MilliSecs())
+
+	Local pong: TPong = New TPong(40, 5)
+	pong.Start()
+EndFunction
+```
+
+#### Définir des champs statiques
+
+En observant le code, on constate que les champs `width`, `height`, `speed`, `min_y` et `max_y` du type `TPaddle` sont communes à toutes les instances. Nous allons transformer ces champs en champs statiques.
+
+Modifiez le type `TPaddle` comme ceci :
+
+```
+Type TPaddle
+	Private
+		Field position: SVec2F
+		Field initial_y: Float
+		Field key_up: Int
+		Field key_down: Int
+
+
+	Public
+		Global width: Int
+		Global height: Int
+		Global speed: Float
+		Global min_y: Float
+		Global max_y: Float
+		
+		
+		Method New(x: Float, y: Float, key_up: Int, key_down: Int)
+			position = New SVec2F(x, y)
+			initial_y = position.y
+			Self.key_up = key_up
+			Self.key_down = key_down
+		EndMethod
+
+
+		...
+EndType
+```
+
+**Remarque :** Les champs statiques sont déplacés dans la section `public` car on doit pouvoir y accéder depuis l'extérieur.
+
+Modifiez le constructeur du type `TPong` pour définir les champs statiques séparément du reste.
+
+```
+Method New(tile_size: Int, paddle_speed: Int)
+	Self.tile_size = tile_size
+	Self.paddle_speed = paddle_speed
+	
+	TPaddle.width = tile_size
+	TPaddle.height = tile_size * 3
+	TPaddle.speed = paddle_speed
+	TPaddle.min_y = 0
+	TPaddle.max_y = tile_size * 6
+	left_paddle = New TPaddle(tile_size, tile_size * 3, KEY_Z, KEY_S)
+	right_paddle = New TPaddle(tile_size * 14, tile_size * 3, KEY_UP, KEY_DOWN)
+	ball = New TBall(tile_size * 8 - tile_size / 2, tile_size * 4, tile_size, tile_size, paddle_speed * 1.7, 60.0, 0, tile_size * 15, 0, tile_size * 8)
+	left_score = New TScore(10, 10)
+	right_score = New TScore(620, 10)
+	
+	Graphics(640, 360)
+	SetClsColor(51, 152, 75)
+EndMethod
+```
+
+#### Utilisation de constantes
+
+Dans le type `TPong`, définir les constantes `SCREEN_WIDTH` et `SCREEN_HEIGHT` pour indiquer qu'elles ne changeront jamais.
+
+```
+Type TPong
+	Private
+		Const SCREEN_WIDTH: Int = 640
+		Const SCREEN_HEIGHT: Int = 360
+
+	...
+
+		Graphics(SCREEN_WIDTH, SCREEN_HEIGHT)
+EndType
+```
+
 [A REDIGER]
 
- ou appuie sur la touche `ECHAP` pour quitter la boucle de jeu.
 
-Utilisation de constantes.
+#### Quitter le jeu avec la touche `ECHAP`
+
+Nous allons modifier la boucle de jeu pour que la condition de fin de boucle prenne en compte l'appui sur la touche `ECHAP`. On pourrait imaginer n'importe quelle autre condition comme par exemple un menu d'options qui proposerait la fermeture du programme.
 
 ```
-Const SCREEN_WIDTH: Int = 640
-Const SCREEN_HEIGHT: Int = 360
+Local gameloop_running: Int = True
 
-Graphics(SCREEN_WIDTH, SCREEN_HEIGHT)
+While gameloop_running
+	gameloop_running = Not (AppTerminate() Or KeyDown(KEY_ESCAPE))
+	
+	Update()
+	Draw()
+Wend
 ```
 
-clamp des paddles
-delta_time
-fichiers séparés
+#### Définir un rebond différent selon la position des paddles
+
+
+
+#### Contrôler la vitesse d'exécution
+
+Jusqu'ici, nous avons déplacé les éléments selon une vitesse constante appliquée image après image. Si, pour une raison ou une autre, le jeu se mettait à ralentir ou à accélerer, les éléments seraient également ralentis ou accélérés. Ce n'est pas une expérience très plaisante. Pour éviter cela, nous allons ajouter la gestion d'un écart de temps (*delta time*) et déplacer les éléments relativement à cette valeur. Ainsi nous ne déplacerons plus les éléments en pixels par image mais en pixels par seconde.
+
+Dans la méthode `Start` du type `TPong`, ajoutez les variables locales `previous_time` (pour stocker le temps de la boucle précédente) et `current_time` (pour stocker le temps de la boucle actuelle). Profitez-en pour initialiser la variable `previous_time` en appelant la commande `MilliSecs`.
+
+```
+Local previous_time: Int = MilliSecs()
+Local current_time: Int
+```
+
+Dans la boucle de jeu, avant d'appeler les méthodes `Update` et `Draw`, calculez dans une variable `delta_time` l'écart de temps (en secondes) entre la précédente boucle et celle actuelle.
+
+```
+current_time = MilliSecs()
+Local delta_time: Float = (current_time - previous_time) / 1000.0
+previous_time = current_time
+```
+
+**Attention !** Il est très important de modifier la variable `previous_time` une fois la variable `delta_time` calculée. Si vous ne le faites pas, l'écart de temps ne représentera pas l'écart entre la précédente boucle et celle actuelle mais l'écart entre la première boucle et celle actuelle.
+
+Enfin, passez la valeur `delta_time` à l'appel de la méthode `Update`.
+
+```
+Update(delta_time)
+```
+
+Comme nous venons de modifier l'appel à la méthode `Update`, nous devons également modifier la définition de cette méthode.
+
+```
+Method Update(delta_time: Float)
+	left_paddle.Update(delta_time: Float)
+	right_paddle.Update(delta_time: Float)
+	ball.Update(delta_time: Float)
+	If ball.IsLeftGoal()
+		right_score.Add(1)
+	EndIf
+	If ball.IsRightGoal()
+		left_score.Add(1)
+	EndIf
+	CheckCollisions()
+	CheckEndGame()
+EndMethod
+```
+
+A leur tour, nous devons modifier les méthodes `Update` des types `TPaddle` et `TBall` (les éléments en mouvement).
+
+Methode `Update` du type `TPaddle` :
+
+```
+Method Update(delta_time: Float)
+	If KeyDown(key_up)
+		position = New SVec2F(position.x, position.y - speed * delta_time)
+	EndIf
+	If KeyDown(key_down)
+		position = New SVec2F(position.x, position.y + speed * delta_time)
+	EndIf
+	If position.y < min_y
+		position = New SVec2F(position.x, min_y)
+	EndIf
+	If position.y > max_y
+		position = New SVec2F(position.x, max_y)
+	EndIf
+EndMethod
+```
+
+Methode `Update` du type `TBall` :
+
+```
+Method Update(delta_time: Float)
+	position = New SVec2F(position.x + velocity.x * delta_time, position.y + velocity.y * delta_time)
+	If position.y < min_position.y
+		position = New SVec2F(position.x, min_position.y)
+		velocity = New SVec2F(velocity.x, -velocity.y)
+	EndIf
+	If position.y > max_position.y
+		position = New SVec2F(position.x, max_position.y)
+		velocity = New SVec2F(velocity.x, -velocity.y)
+	EndIf
+	left_goal = position.x < min_position.x
+	If left_goal
+		position = initial_position
+		velocity = New SVec2F(speed, 0)
+		velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+	EndIf
+	right_goal = position.x > max_position.x
+	If right_goal
+		position = initial_position
+		velocity = New SVec2F(-speed, 0)
+		velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+	EndIf
+EndMethod
+```
+
+Si vous exécuter le programme, vous constaterez que les éléments sont extrèmement lents maintenant. En effet, nous passons de `x` pixels par image à `x` pixels pas secondes, soit 60 fois moins rapidement si le jeu tourne à 60 images par seconde. Nous devons donc ajuster la vitesse des éléments à cette évolution.
+
+Modifiez la fonction `Start` du programme principal :
+
+```
+Function start: Int()
+	SeedRnd(MilliSecs())
+
+	Local pong: TPong = New TPong(40, 300)
+	pong.Start()
+EndFunction
+```
+
+Le jeu s'exécute à nouveau correctement à la différence près que les ralentissements ou accélérations n'ont plus d'impact sur la vitesse de déplacement des éléments.
+
+#### Titre de la fenêtre
+
+Par défaut, la fenêtre de jeu affiche le texte `BlitzMax Application`. Nous allons changer ce texte en modifiant la variable globale `AppTitle`.
+
+Dans la méthode `` du type ``, ajoutez l'instruction suivante.
+
+```
+AppTitle = "BlitzMax Pong"
+```
+
+#### Code final
+
+Le fichier [`pong_v4.bmx`](src/pong_v4.bmx) :
+
+```
+SuperStrict
+
+Import "tpong.bmx"
+
+
+Function start: Int()
+	SeedRnd(MilliSecs())
+
+	Local pong: TPong = New TPong(40, 300)
+	pong.Start()
+EndFunction
+
+
+start()
+```
+
+Le fichier [`tpong.bmx`](src/tpong.bmx) :
+
+```
+SuperStrict
+
+Import "tpaddle.bmx"
+Import "tball.bmx"
+Import "tscore.bmx"
+
+
+Type TPong
+	Private
+		Const SCREEN_WIDTH: Int = 640
+		Const SCREEN_HEIGHT: Int = 360
+		
+		Field tile_size: Int
+		Field paddle_speed: Int
+		
+		Field left_paddle: TPaddle
+		Field right_paddle: TPaddle
+		Field ball: TBall
+		Field left_score: TScore
+		Field right_score: TScore
+	
+	
+	Public
+		Method New(tile_size: Int, paddle_speed: Int)
+			Self.tile_size = tile_size
+			Self.paddle_speed = paddle_speed
+			
+			TPaddle.width = tile_size
+			TPaddle.height = tile_size * 3
+			TPaddle.speed = paddle_speed
+			TPaddle.min_y = 0
+			TPaddle.max_y = tile_size * 6
+			left_paddle = New TPaddle(tile_size, tile_size * 3, KEY_Z, KEY_S)
+			right_paddle = New TPaddle(tile_size * 14, tile_size * 3, KEY_UP, KEY_DOWN)
+			ball = New TBall(tile_size * 8 - tile_size / 2, tile_size * 4, tile_size, tile_size, paddle_speed * 1.7, 60.0, 0, tile_size * 15, 0, tile_size * 8)
+			left_score = New TScore(10, 10)
+			right_score = New TScore(620, 10)
+			
+			AppTitle = "BlitzMaxPong"
+			Graphics(SCREEN_WIDTH, SCREEN_HEIGHT)
+			SetClsColor(51, 152, 75)
+		EndMethod
+		
+		
+		Method Start()
+			Local gameloop_running: Int = True
+			Local previous_time: Int = MilliSecs()
+			Local current_time: Int
+
+			While gameloop_running
+				gameloop_running = Not (AppTerminate() Or KeyDown(KEY_ESCAPE))
+				
+				current_time = MilliSecs()
+				Local delta_time: Float = (current_time - previous_time) / 1000.0
+				previous_time = current_time
+				Update(delta_time)
+				Draw()
+			Wend
+		EndMethod
+		
+		
+		Method Update(delta_time: Float)
+			left_paddle.Update(delta_time: Float)
+			right_paddle.Update(delta_time: Float)
+			ball.Update(delta_time: Float)
+			If ball.IsLeftGoal()
+				right_score.Add(1)
+			EndIf
+			If ball.IsRightGoal()
+				left_score.Add(1)
+			EndIf
+			CheckCollisions()
+			CheckEndGame()
+		EndMethod
+		
+		
+		Method Draw()
+			Cls()
+			SetColor(0, 152, 220)
+			left_paddle.Draw()
+			right_paddle.Draw()
+			SetColor(255, 200, 37)
+			ball.Draw()
+			left_score.Draw()
+			right_score.Draw()
+			Flip()
+		EndMethod
+		
+		
+		Method Initialize: Int()
+			left_paddle.Initialize()
+			right_paddle.Initialize() 
+			ball.Initialize(paddle_speed * 1.3, paddle_speed * 1.1) 
+			left_score.Initialize()
+			right_score.Initialize()
+		EndMethod
+		
+				
+		Method CheckCollisions()
+			If ball.GetX() + ball.GetWidth() > left_paddle.GetX() And ball.GetX() < left_paddle.GetX() + left_paddle.GetWidth() And ball.GetY() + ball.GetHeight() > left_paddle.GetY() And ball.GetY() < left_paddle.GetY() + left_paddle.GetHeight()
+				ball.SetX(left_paddle.GetX() + left_paddle.GetWidth())
+				ball.SetSpeedX(-ball.GetSpeedX())
+			EndIf
+			If ball.GetX() + ball.GetWidth() > right_paddle.GetX() And ball.GetX() < right_paddle.GetX() + right_paddle.GetWidth() And ball.GetY() + ball.GetHeight() > right_paddle.GetY() And ball.GetY() < right_paddle.GetY() + right_paddle.GetHeight()
+				ball.SetX(right_paddle.GetX() - ball.GetWidth())
+				ball.SetSpeedX(-ball.GetSpeedX())
+			EndIf
+		EndMethod
+		
+		
+		Method CheckEndGame()
+			If left_score.GetValue() >= 11 Or right_score.GetValue() >= 11
+				Initialize()
+			EndIf
+		EndMethod
+EndType
+```
+
+Le fichier [`tpaddle.bmx`](src/tpaddle.bmx) :
+
+```
+SuperStrict
+
+
+Type TPaddle
+	Private
+		Field position: SVec2F
+		Field initial_y: Float
+		Field key_up: Int
+		Field key_down: Int
+
+
+	Public
+		Global width: Int
+		Global height: Int
+		Global speed: Float
+		Global min_y: Float
+		Global max_y: Float
+		
+		
+		Method New(x: Float, y: Float, key_up: Int, key_down: Int)
+			position = New SVec2F(x, y)
+			initial_y = position.y
+			Self.key_up = key_up
+			Self.key_down = key_down
+		EndMethod
+		
+		
+		Method Initialize()
+			position = New SVec2F(position.x, initial_y)
+		EndMethod
+		
+		
+		Method Update(delta_time: Float)
+			If KeyDown(key_up)
+				position = New SVec2F(position.x, position.y - speed * delta_time)
+			EndIf
+			If KeyDown(key_down)
+				position = New SVec2F(position.x, position.y + speed * delta_time)
+			EndIf
+			If position.y < min_y
+				position = New SVec2F(position.x, min_y)
+			EndIf
+			If position.y > max_y
+				position = New SVec2F(position.x, max_y)
+			EndIf
+		EndMethod
+		
+		
+		Method Draw()
+			DrawRect(position.x, position.y, width, height)
+		EndMethod
+		
+		
+		Method GetX: Float()
+			Return position.x
+		EndMethod
+		
+		
+		Method GetY: Float()
+			Return position.y
+		EndMethod
+		
+		
+		Method GetWidth: Int()
+			Return width
+		EndMethod
+		
+		
+		Method GetHeight: Int()
+			Return height
+		EndMethod
+EndType
+```
+
+Le fichier [`tball.bmx`](src/tball.bmx) :
+
+```
+SuperStrict
+
+
+Type TBall
+	Private
+		Field position: SVec2F
+		Field initial_position: SVec2F
+		Field width: Int
+		Field height: Int
+		Field speed: Float
+		Field max_angle: Float
+		Field velocity: SVec2F
+		Field min_position: SVec2I
+		Field max_position: SVec2I
+		Field left_goal: Int
+		Field right_goal: Int
+
+
+	Public
+		Method New(x: Float, y: Float, width: Int, height: Int, speed: Float, max_angle: Float, min_x: Int, max_x: Int, min_y: Int, max_y: Int)
+			position = New SVec2F(x, y)
+			initial_position = position
+			Self.width = width
+			Self.height = height
+			Self.speed = speed
+			Self.max_angle = max_angle
+			velocity = New SVec2F(speed, 0)
+			velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+			min_position = New SVec2I(min_x, min_y)
+			max_position = New SVec2I(max_x, max_y)
+			left_goal = False
+			right_goal = False
+		EndMethod
+		
+		
+		Method Initialize(speed_x: Float, speed_y: Float)
+			position = initial_position
+			velocity = New SVec2F(speed, 0)
+			velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+		EndMethod
+		
+		
+		Method Update(delta_time: Float)
+			position = New SVec2F(position.x + velocity.x * delta_time, position.y + velocity.y * delta_time)
+			If position.y < min_position.y
+				position = New SVec2F(position.x, min_position.y)
+				velocity = New SVec2F(velocity.x, -velocity.y)
+			EndIf
+			If position.y > max_position.y
+				position = New SVec2F(position.x, max_position.y)
+				velocity = New SVec2F(velocity.x, -velocity.y)
+			EndIf
+			left_goal = position.x < min_position.x
+			If left_goal
+				position = initial_position
+				velocity = New SVec2F(speed, 0)
+				velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+			EndIf
+			right_goal = position.x > max_position.x
+			If right_goal
+				position = initial_position
+				velocity = New SVec2F(-speed, 0)
+				velocity = velocity.Rotate(Rnd(-max_angle, max_angle))
+			EndIf
+		EndMethod
+		
+		
+		Method Draw()
+			DrawRect(position.x, position.y, width, height)
+		EndMethod
+		
+		
+		Method IsLeftGoal: Int()
+			Return left_goal
+		EndMethod
+		
+		
+		Method IsRightGoal: Int()
+			Return right_goal
+		EndMethod
+		
+		
+		Method GetX: Float()
+			Return position.x
+		EndMethod
+		
+		
+		Method SetX(new_value: Float)
+			position = New SVec2F(new_value, position.y)
+		EndMethod
+		
+		
+		Method GetY: Float()
+			Return position.y
+		EndMethod
+		
+		
+		Method GetWidth: Int()
+			Return width
+		EndMethod
+		
+		
+		Method GetHeight: Int()
+			Return height
+		EndMethod
+
+
+		Method GetSpeedX: Float()
+			Return velocity.x
+		EndMethod
+		
+		
+		Method SetSpeedX(new_value: Float)
+			velocity = New SVec2F(new_value, velocity.y)
+		EndMethod
+EndType
+```
+
+Le fichier [`tscore.bmx`](src/tscore.bmx) :
+
+```
+SuperStrict
+
+
+Type TScore
+	Private
+		Field value: Int
+		Field position: SVec2I
+	
+	
+	Public
+		Method New(x: Int, y: Int)
+			value = 0
+			position = New SVec2I(x, y)
+		EndMethod
+		
+		
+		Method Initialize()
+			value = 0
+		EndMethod
+		
+		
+		Method Add(value: Int)
+			Self.value :+ value
+		EndMethod
+		
+		
+		Method Draw()
+			DrawText(String(value), position.x, position.y)
+		EndMethod
+		
+		
+		Method GetValue: Int()
+			Return value
+		EndMethod
+EndType
+```
+
+## Conclusion
+
+Voilà, le tutoriel est terminé. J'espère que ça n'aura pas été trop indigeste pour vous.
+
+Comme nous avons pu le voir tout au long du projet, l'amélioration de la qualité et l'organisation du code permettent de mieux gérer la complexité.
+
+- La découpe du code en fonctions a permis de mieux organiser le code en sections plus faciles à gérer et à maintenir.
+- La découpe en objets a permis de structurer le code en entités distinctes dont les rôles sont bien distincts et l'encapsulation a permis de limiter l'accès aux données de ces entités depuis l'extérieur.
+- Enfin, de multiples améliorations et refontes ont permis d'affiner l'expressivité et l'efficacité du code.
+
+De nombreuses améliorations supplémentaires pourraient être apportées mais le but de ce document était de démontrer comment mieux organiser son code.
+
+N'hésitez pas à ajouter des fonctionnalités au projet et à en faire votre propre version.
