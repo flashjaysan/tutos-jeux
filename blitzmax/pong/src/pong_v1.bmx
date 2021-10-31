@@ -104,9 +104,3 @@ While gameloop_running
 	DrawText(String(right_score), right_score_x, score_y)
 	Flip()
 Wend
-
-
-
-
-
-
