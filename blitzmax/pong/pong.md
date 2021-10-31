@@ -2460,7 +2460,7 @@ Type TBall
 		
 		
 		Method Update()
-			position = New SVec2F(position.x + velocity.x, position.y + velocity.y)
+			position = position + velocity * delta_time
 			If position.y < min_position.y
 				position = New SVec2F(position.x, min_position.y)
 				velocity = New SVec2F(velocity.x, -velocity.y)
