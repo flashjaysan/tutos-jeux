@@ -368,28 +368,107 @@ void draw()
 }
 ```
 
-```java
+## Etape 3 - Découper le programme
 
+Le programme commence à devenir de plus en plus gros. Pour mieux le cerner, nous allons créer des fonctions et nous allons déplacer des morceaux de code dans ces fonctions et à la place d'origine, appeler la fonction associée.
+
+Dans la fonction `setup`, nous n'allons garder que l'appel à la fonction `size` qui n'est pas vraiment liée à l'initialisation du jeu en lui-même mais plutôt à un réglage graphique général. Pour le reste, nous allons créer une fonction `initialiser` et placer le code à l'intérieur.
+
+```java
+void initialiser()
+{
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            jetons[ligne][colonne] = 0;
+        }
+    }
+    // valeur de test rouge
+    jetons[2][2] = 1;
+    // valeur de test bleue
+    jetons[3][3] = 2;
+}
 ```
 
-```java
+**Attention !** Quand on déplace du code dans une fonction, il faut penser à appeler cette fonction là où le code se trouvait avant !
 
+```java
+void setup()
+{
+    size(640, 360);
+    initialiser();
+}
 ```
 
-```java
+Pour la fonction `draw`, nous avons deux parties. La première partie dessine la grille et la seconde dessine les jetons. Nous allons créer une fonction pour chacune de ces parties.
 
+Créez la fonction `dessinerGrille` et placez le code associé à l'intérieur.
+
+```java
+void dessinerGrille()
+{
+    //Dessin de la grille
+    // dessine les 7 lignes horizontales
+    for (int i = 0; i < NB_LIGNES + 1; i++)
+    {
+        line(0, i * TAILLE_CASE, NB_COLONNES * TAILLE_CASE, i * TAILLE_CASE);
+    }
+    // dessine les 8 lignes verticales
+    for (int i = 0; i < NB_COLONNES + 1; i++)
+    {
+        line(i * TAILLE_CASE, 0, i * TAILLE_CASE, NB_LIGNES * TAILLE_CASE);
+    }
+}
 ```
 
-```java
+A nouveau, n'oubliez pas d'appeler cette fonction là où se trouvait le code d'origine.
 
+```java
+void draw()
+{
+    dessinerGrille();
+    
+    ...
+}
 ```
 
-```java
+Créez la fonction `dessinerJetons` et placez le code associé à l'intérieur.
 
+```java
+void dessinerJetons()
+{
+    //dessin les jetons
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            switch(jetons[ligne][colonne])
+            {
+                case 0:
+                    fill(255);
+                    break;
+                case 1:
+                    fill(255, 0, 0);
+                    break;
+                case 2:
+                    fill(0, 0, 255);
+                    break;
+            }
+            circle(colonne * TAILLE_CASE + TAILLE_CASE / 2, ligne * TAILLE_CASE + TAILLE_CASE / 2, TAILLE_CASE);
+        }
+    }
+}
 ```
 
-```java
+A nouveau, n'oubliez pas d'appeler cette fonction là où se trouvait le code d'origine.
 
+```java
+void draw()
+{
+    dessinerGrille();
+    dessinerJetons();
+}
 ```
 
 ```java
