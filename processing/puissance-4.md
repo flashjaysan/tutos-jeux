@@ -38,7 +38,7 @@ La méthode la plus simple est de dessiner directement à partir du bord supéri
 
 ### Sous Etape 1.1 - Dessiner les lignes horizontales
 
-Nous allons tracer les lignes horizontales. Pour encadrer nos six lignes, il faut tracer `6 + 1` lignes horizontales. Nous utilisons une boucle `for` et nous utilisons la valeur d'incrément de la boucle ainsi que la taille des cases pour calculer la hauteur de la ligne à tracer. Pour l'instant, nous allons tracer des lignes du bord gauche de l'écran (`0`), jusqu'au bord droit de l'écran (`width`).
+Nous allons tracer les lignes horizontales. Pour encadrer nos six lignes, il faut tracer `6 + 1` lignes horizontales. Nous utilisons une boucle `for` et nous utilisons la valeur d'incrément de la boucle ainsi que la taille des cases pour calculer la hauteur de la ligne à tracer. Pour l'instant, nous allons tracer des lignes depuis le bord gauche de l'écran (`0`), jusqu'au bord droit de l'écran (`width`).
 
 ```java
 void setup()
@@ -72,7 +72,7 @@ for (int i = 0; i < 6 + 1; i++)
 
 ### Sous Etape 1.3 - Dessiner les lignes verticales
 
-Nous allons tracer les lignes verticales. Pour encadrer nos 7 colonnes, il faut tracer `7 + 1` lignes verticales. Nous utilisons une boucle `for` et nous utilisons la valeur d'incrément de la boucle ainsi que la taille des cases pour calculer la largeur de la ligne à tracer. Pour l'instant, nous allons tracer des lignes du bord supérieur de l'écran (`0`), jusqu'au bord inférieur de l'écran (`height`).
+Nous allons tracer les lignes verticales. Pour encadrer nos 7 colonnes, il faut tracer `7 + 1` lignes verticales. Nous utilisons une boucle `for` et nous utilisons la valeur d'incrément de la boucle ainsi que la taille des cases pour calculer la largeur de la ligne à tracer. Pour l'instant, nous allons tracer des lignes depuis le bord supérieur de l'écran (`0`), jusqu'au bord inférieur de l'écran (`height`).
 
 ```java
 void setup()
