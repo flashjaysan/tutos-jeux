@@ -471,10 +471,153 @@ void draw()
 }
 ```
 
-```java
+## Etape 4 - Modifier l'état d'un jeton avec la souris
 
+Jusque là, nous avons converti notre structure de donnée en dessin en passant des coordonnées dans le tableau à des coordonnées à l'écran. Nous allons maintenant effectuer une conversion inverse à ce que nous avons fait précédemment. En effet, nous devons convertir les coordonnées où le joueur clique à l'écran en coordonnées dans le tableau en mémoire. Pour cela, il suffit de diviser les coordonnées d'écran par la taille des cases.
+
+**Remarque :** Les coordonnées de la souris `mouseX` et `mouseY` et la taille des cases `TAILLE_CASE` étant toutes des valeurs de type `int`, une division donnera un résultat entier (la partie décimale sera tronquée). C'est exactement le résultat désiré pour obtenir des coordonnées dans notre tableau. Notez toutefois que pour d'autres situations impliquant des valeurs à virgule (`float`), vous devrez peut-être convertir le résultat de la division en entier.
+
+### Etape 4.1 - Conversion des coordonnées du clic en coordonnées dans le tableau
+
+Pour gérer le clic de souris, nous utilisons la fonction `mousePressed`.
+
+```java
+void mousePressed()
+{
+    int colonneCliquee = mouseX / TAILLE_CASE;
+    int ligneCliquee = mouseY / TAILLE_CASE;
+}
 ```
 
-```java
+### Etape 4.2 - Vérification que le clic est bien dans le tableau
 
+Avant d'accéder au tableau pour modifier sa valeur, nous devons nous assurer que le clic a bien été effectué dans le tableau.
+
+```java
+void mousePressed()
+{
+    int colonneCliquee = mouseX / TAILLE_CASE;
+    int ligneCliquee = mouseY / TAILLE_CASE;
+    // vérifier qu'on a bien cliqué dans le tableau
+    if (colonneCliquee < NB_COLONNES && ligneCliquee < NB_LIGNES)
+    {
+        
+    }
+}
 ```
+
+### Etape 4.3 - Modification du jeton correspondant au clic
+
+Si le clic est bien dans le tableau, on modifie la valeur du jeton correspondant.
+
+```java
+void mousePressed()
+{
+    int colonneCliquee = mouseX / TAILLE_CASE;
+    int ligneCliquee = mouseY / TAILLE_CASE;
+    // vérifier qu'on a bien cliqué dans le tableau
+    if (colonneCliquee < NB_COLONNES && ligneCliquee < NB_LIGNES)
+    {
+        jetons[ligneCliquee][colonneCliquee] = 1;
+    }
+}
+```
+
+Pour l'instant, chaque clic passe le jeton associé à la valeur `1` ce qui dessine le jeton à l'écran en rouge. Nous voulons que chaque clic passe du joueur 1 au joueur 2 et inversement. Comme nous avons seulement deux joueurs, nous pouvons utiliser une variable de type `boolean` pouvant valoir soit `true` (vrai) soit `false` (faux). Définissons une variable `joueur1` en tête du programme.
+
+```java
+boolean joueur1;
+```
+
+**Remarque :** Nous n'initialisons pas cette variable lors de sa définition car nous allons l'initialiser dans la fonction `initialiser` sachant que cette variable fait partie de l'état du jeu à initialiser.
+
+Initialisez cette variable à `true` dans la fonction `initialiser` pour indiquer que le joueur 1 commence toujours à jouer le premier.
+
+```java
+void initialiser()
+{
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            jetons[ligne][colonne] = 0;
+        }
+    }
+    joueur1 = true;
+}
+```
+
+**Remarque :** Si ce n'est pas encore fait, profitez en pour supprimer les lignes suivantes dans la fonction `initialiser`.
+
+```java
+// valeur de test rouge
+jetons[2][2] = 1;
+// valeur de test bleue
+jetons[3][3] = 2;
+```
+
+Dans la fonction `mousePressed`, vérifiez la valeur de cette variable pour déterminer si on doit donner la valeur `1` au jeton (pour le joueur 1) ou la valeur `2` (pour le joueur 2).
+
+```java
+void mousePressed()
+{
+    int colonneCliquee = mouseX / TAILLE_CASE;
+    int ligneCliquee = mouseY / TAILLE_CASE;
+    // vérifier qu'on a bien cliqué dans le tableau
+    if (colonneCliquee < NB_COLONNES && ligneCliquee < NB_LIGNES)
+    {
+        if (joueur1)
+        {
+            jetons[ligneCliquee][colonneCliquee] = 1;
+        }
+        else
+        {
+            jetons[ligneCliquee][colonneCliquee] = 2;
+        }
+    }
+}
+```
+
+**Remarque :** La variable `joueur1` étant de type `boolean`, nous pouvons tester directement sa valeur sans comparer à une valeur particulière. Utiliser `variableBooleenne` comme condition est équivalent à utiliser `variableBooleenne == true`. Utiliser `!variableBooleenne` comme condition est équivalent à utiliser `variableBooleenne == false` ou `variableBooleenne != true`.
+
+**Attention !** Le code actuel teste la valeur de la variable `joueur1` mais ne la modifie jamais. On ne passe donc jamais au joueur 2. Inversez la valeur contenue dans cette variable à chaque modification.
+
+```java
+void mousePressed()
+{
+    int colonneCliquee = mouseX / TAILLE_CASE;
+    int ligneCliquee = mouseY / TAILLE_CASE;
+    // vérifier qu'on a bien cliqué dans le tableau
+    if (colonneCliquee < NB_COLONNES && ligneCliquee < NB_LIGNES)
+    {
+        if (joueur1)
+        {
+            jetons[ligneCliquee][colonneCliquee] = 1;
+        }
+        else
+        {
+            jetons[ligneCliquee][colonneCliquee] = 2;
+        }
+        joueur1 = !joueur1;
+    }
+}
+```
+
+**Remarque :** L'instruction `joueur1 = !joueur1` inverse la valeur. L'opérateur logique de négation `!` change la valeur booléenne sur la valeur opposée. Cela revient à écrire :
+
+```java
+if (joueur1)
+{
+    joueur1 = false;
+}
+else
+{
+    joueur1 = true;
+}
+```
+
+Désormais, à chaque clic valide, on change de joueur ce qui a pour effet de dessiner le jeton associé avec la couleur associée au joueur.
+
+Cependant, si on clique plusieurs fois sur la même case, le jeton change d'état à chaque fois. Nous devons vérifier que l'état du jeton cliqué est à `0` pour pouvoir le modifier.
+
+
