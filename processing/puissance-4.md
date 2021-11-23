@@ -182,32 +182,190 @@ void draw()
 
 **Remarque :** Notre grille est dessinée correctement. Nous pourrions toutefois aller plus loin en centrant cette grille dans la fenêtre. Cependant, comme ce tutoriel doit rester accessible, je préfère rester sur la solution actuelle et que l'on se base sur l'origine `(0, 0)` pour positionner nos éléments et trouver à quelle case correspond une position.
 
-```java
+## Etape 2 - Dessiner les jetons vides
 
+Pour dessiner les jetons, nous avons besoin d'une structure de données pour les représenter. Un tableau à deux dimensions est la méthode la plus classique. Nous utilisons à nouveau les constantes de la section précédente pour créer le tableau.
+
+```java
+int[][] jetons = new int[NB_LIGNES][NB_COLONNES];
 ```
 
-```java
+Il faut ensuite initialiser chaque élément du tableau. Pour cela, on utilise deux boucles `for` imbriquées (une pour chaque ligne et une pour chaque case d'une ligne). Nous utilisons à nouveau les constantes de la section précédente. L'initialisation s'effectuant une seule fois au début du programme, on place le code dans la fonction `setup`.
 
+On définit les valeurs suivantes :
+
+- `0` : case vide (valeur par défaut).
+- `1` : case prise par un jeton du joueur 1 (rouge).
+- `2` : case prise par un jeton du joueur 2 (bleu).
+
+```java
+void setup()
+{
+    size(640, 360);
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            jetons[ligne][colonne] = 0;
+        }
+    }
+}
 ```
 
-```java
+Une fois notre tableau initialisé, nous pouvons le dessiner. A nouveau nous utilisons deux boucles `for` imbriquées mais cette fois dans la fonction `draw`. On utilise la fonction `circle` pour dessiner un cercle en guise de jeton. Les deux premiers paramètres sont les coordonnées du cercle et le troisième, le diamètre du cercle. Pour commencer, nous allons positionner un cercle blanc en utilisant la taille des cases ainsi que les valeurs des itérateurs de boucles pour trouver leur position.
 
+```java
+void draw()
+{
+    ...
+    
+    //dessin les jetons
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            circle(colonne * TAILLE_CASE, ligne * TAILLE_CASE, TAILLE_CASE);
+        }
+    }
+}
 ```
 
-```java
+Mais si vous exécuter ce code, vous constaterez que les cercles sont dessinés **sur** les croisements des lignes. Il faut prendre en compte qu'on positionne les cercles sur leur centre. Et donc nous devons les positionner **au centre des cases**. Pour cela, à nouveau, on utilise la constante `TAILLE_CASE` mais que nous allons diviser par deux.
 
+```java
+void draw()
+{
+    ...
+    
+    //dessin les jetons
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            circle(colonne * TAILLE_CASE + TAILLE_CASE / 2, ligne * TAILLE_CASE + TAILLE_CASE / 2, TAILLE_CASE);
+        }
+    }
+}
 ```
 
-```java
+**Remarque :** J'ai omis volontairement les parenthèses car la multiplication et la division sont prioritaires sur l'addition et la soustraction.
 
+Nous affichons bien les différents jetons du tableau. Il y a cependant un problème. A aucun moment nous n'utilisons le contenu du tableau. Ainsi tous les jetons sont dessinés en blanc (la couleur par défaut).
+
+Nous pouvons facilement le vérifier en modifiant un élément du tableau à une valeur différente de `0` lors de l'initialisation dans la fonction `setup`.
+
+```java
+void setup()
+{
+    size(640, 360);
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            jetons[ligne][colonne] = 0;
+        }
+    }
+    // valeur de test rouge
+    jetons[2][2] = 1;
+    // valeur de test bleue
+    jetons[3][3] = 2;
+}
 ```
 
-```java
+Nous allons donc ajouter une gestion d'une condition pour déterminer la couleur à utiliser pour dessiner le jeton actuel. Vous pouvez utiliser une instruction `if else` en cascade mais la meilleure solution est d'utiliser une instruction `switch`. La différence réside dans le fait qu'une condition d'une instruction `if` peut être quelconque alors que dans une instruction `switch` on compare une *expression* à des valeurs précises.
 
+```java
+void draw()
+{
+    ...
+
+    //dessin les jetons
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            switch(jetons[ligne][colonne])
+            {
+                case 0:
+                    fill(255);
+                    break;
+                case 1:
+                    fill(255, 0, 0);
+                    break;
+                case 2:
+                    fill(0, 0, 255);
+                    break;
+            }
+            circle(colonne * TAILLE_CASE + TAILLE_CASE / 2, ligne * TAILLE_CASE + TAILLE_CASE / 2, TAILLE_CASE);
+        }
+    }
+}
 ```
 
-```java
+**Remarque :** Notez bien que le dessin du cercle en lui-même est fait en dehors de l'instruction `switch`. Dans cette dernière, on ne modifie que la couleur de remplissage car quelle que soit la couleur, on dessine toujours un cercle.
 
+**Attention !** Les différents cas (`case`) d'une instructions `switch` nécéssitent presque toujours une instruction `break`. Si vous l'oubliez, votre code peut avoir un comportement différent de celui attendu. C'est le piège de l'instruction `switch`. Pour faire simple, une instruction `switch` exécute le code correspondant au cas associé à l'expression à tester et continue à exécuter tous les cas suivants sauf si on place une instruction `break` qui permet de sortir de l'instruction `switch` et de passer au code suivant.
+
+Le code complet de cette étape :
+
+```java
+final int TAILLE_CASE = 40;
+final int NB_LIGNES = 6;
+final int NB_COLONNES = 7;
+
+int[][] jetons = new int[NB_LIGNES][NB_COLONNES];
+
+void setup()
+{
+    size(640, 360);
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            jetons[ligne][colonne] = 0;
+        }
+    }
+    // valeur de test rouge
+    jetons[2][2] = 1;
+    // valeur de test bleue
+    jetons[3][3] = 2;
+}
+
+void draw()
+{
+    //Dessin de la grille
+    // dessine les 7 lignes horizontales
+    for (int i = 0; i < NB_LIGNES + 1; i++)
+    {
+        line(0, i * TAILLE_CASE, NB_COLONNES * TAILLE_CASE, i * TAILLE_CASE);
+    }
+    // dessine les 8 lignes verticales
+    for (int i = 0; i < NB_COLONNES + 1; i++)
+    {
+        line(i * TAILLE_CASE, 0, i * TAILLE_CASE, NB_LIGNES * TAILLE_CASE);
+    }
+    
+    //dessin les jetons
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            switch(jetons[ligne][colonne])
+            {
+                case 0:
+                    fill(255);
+                    break;
+                case 1:
+                    fill(255, 0, 0);
+                    break;
+                case 2:
+                    fill(0, 0, 255);
+                    break;
+            }
+            circle(colonne * TAILLE_CASE + TAILLE_CASE / 2, ligne * TAILLE_CASE + TAILLE_CASE / 2, TAILLE_CASE);
+        }
+    }
+}
 ```
 
 ```java
