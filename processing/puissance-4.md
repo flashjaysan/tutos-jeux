@@ -620,4 +620,121 @@ Désormais, à chaque clic valide, on change de joueur ce qui a pour effet de de
 
 Cependant, si on clique plusieurs fois sur la même case, le jeton change d'état à chaque fois. Nous devons vérifier que l'état du jeton cliqué est à `0` pour pouvoir le modifier.
 
+Ajoutez dans la condition qui vérifie si le clic est dans le tableau une nouvelle condition qui vérifie que la case à modifier est à `0`.
 
+```java
+void mousePressed()
+{
+    int colonneCliquee = mouseX / TAILLE_CASE;
+    int ligneCliquee = mouseY / TAILLE_CASE;
+    // vérifier qu'on a bien cliqué dans le tableau
+    if (colonneCliquee < NB_COLONNES && ligneCliquee < NB_LIGNES && jetons[ligneCliquee][colonneCliquee] == 0)
+    {
+        if (joueur1)
+        {
+            jetons[ligneCliquee][colonneCliquee] = 1;
+        }
+        else
+        {
+            jetons[ligneCliquee][colonneCliquee] = 2;
+        }
+        joueur1 = !joueur1;
+    }
+}
+```
+
+**Attention !** Il est très important de tester si le clic est dans le tableau **avant** de tester si la case cliquée est à `0`. En effet, si le clic n'est pas dans le tableau, vérifier si la case cliquée (qui n'existe pas) est à `0` provoquera une erreur. Dans Processing (mais aussi dans de nombreux autres langages), l'opérateur logique ET `&&` interrompt le test si la condition à gauche de cet opérateur est fausse. Si c'est le cas, la condition à droite n'est pas testée ce qui a pour effet ici d'empêcher l'erreur de se produire.
+
+Le code complet jusque là :
+
+```java
+final int TAILLE_CASE = 40;
+final int NB_LIGNES = 6;
+final int NB_COLONNES = 7;
+
+int[][] jetons = new int[NB_LIGNES][NB_COLONNES];
+boolean joueur1;
+
+void setup()
+{
+    size(640, 360);
+    initialiser();
+}
+
+void initialiser()
+{
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            jetons[ligne][colonne] = 0;
+        }
+    }
+    joueur1 = true;
+}
+
+void draw()
+{
+    dessinerGrille();
+    dessinerJetons();
+}
+
+void dessinerGrille()
+{
+    //Dessin de la grille
+    // dessine les 7 lignes horizontales
+    for (int i = 0; i < NB_LIGNES + 1; i++)
+    {
+        line(0, i * TAILLE_CASE, NB_COLONNES * TAILLE_CASE, i * TAILLE_CASE);
+    }
+    // dessine les 8 lignes verticales
+    for (int i = 0; i < NB_COLONNES + 1; i++)
+    {
+        line(i * TAILLE_CASE, 0, i * TAILLE_CASE, NB_LIGNES * TAILLE_CASE);
+    }
+}
+
+void dessinerJetons()
+{
+    //dessin les jetons
+    for (int ligne = 0; ligne < NB_LIGNES; ligne++)
+    {
+        for (int colonne = 0; colonne < NB_COLONNES; colonne++)
+        {
+            switch(jetons[ligne][colonne])
+            {
+                case 0:
+                    fill(255);
+                    break;
+                case 1:
+                    fill(255, 0, 0);
+                    break;
+                case 2:
+                    fill(0, 0, 255);
+                    break;
+            }
+            circle(colonne * TAILLE_CASE + TAILLE_CASE / 2, ligne * TAILLE_CASE + TAILLE_CASE / 2, TAILLE_CASE);
+        }
+    }
+}
+
+void mousePressed()
+{
+    int colonneCliquee = mouseX / TAILLE_CASE;
+    int ligneCliquee = mouseY / TAILLE_CASE;
+    // vérifier qu'on a bien cliqué dans le tableau
+    if (colonneCliquee < NB_COLONNES && ligneCliquee < NB_LIGNES && jetons[ligneCliquee][colonneCliquee] == 0)
+    {
+        if (joueur1)
+        {
+            jetons[ligneCliquee][colonneCliquee] = 1;
+        }
+        else
+        {
+            jetons[ligneCliquee][colonneCliquee] = 2;
+        }
+        joueur1 = !joueur1;
+    }
+}
+
+```
