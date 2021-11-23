@@ -34,7 +34,7 @@ void draw()
 
 ## Etape 1 - Dessiner une grille
 
-La méthode la plus simple est de partir du bord supérieur gauche de la fenêtre.
+La méthode la plus simple est de dessiner directement à partir du bord supérieur gauche de la fenêtre sans prévoir d'espace.
 
 ### Sous Etape 1.1 - Dessiner les lignes horizontales
 
