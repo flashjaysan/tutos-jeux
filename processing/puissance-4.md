@@ -16,9 +16,13 @@ void draw()
 }
 ```
 
-Nous allons définir une taille de fenêtre plus grande que celle par défaut (100x100). J'ai choisi la taille 640x360 mais vous pouvez choisir une autre taille. L'important est de choisir une taille suffisante pour voir nos cases de jeu. Nous utilisons la fonction `size` à l'intérieur de la fonction `setup` pour définir la taille de la fenêtre.
+Si nous exécutons ce code, une fenêtre vide apparait. Celle-ci a une dimension par défaut de 100x100 pixels.
 
-**Attention !** La fonction `size` n'accepte pas de variable en paramètres. Il faut utiliser des valeurs *littérales* (codées en dur).
+![processing_fenetre_par_defaut.png](Fenêtre par défaut de Processing)
+
+Nous allons définir une taille de fenêtre plus grande. J'ai choisi la taille 640x360 pixels mais vous pouvez choisir une autre taille si vous le souhaitez. L'important est de choisir une taille suffisante pour voir nos cases de jeu. Nous utilisons la fonction `size` à l'intérieur de la fonction `setup` pour définir la taille de la fenêtre.
+
+**Attention !** La fonction `size` n'accepte pas de variable en guise de paramètre. Il faut utiliser des valeurs *littérales* (codées en dur).
 
 ```java
 void setup()
@@ -32,13 +36,17 @@ void draw()
 }
 ```
 
+![processing_fenetre_640x360.png](Fenêtre de 640x360)
+
 ## Etape 1 - Dessiner une grille
 
-La méthode la plus simple est de dessiner directement à partir du bord supérieur gauche de la fenêtre sans prévoir d'espace.
+La méthode la plus simple est de dessiner directement à partir du bord supérieur gauche de la fenêtre sans prévoir d'espace. Les lignes seront donc tracés à partir du premier pixel visible dans le coin supérieur gauche de la fenêtre (situé aux coordonnées `(0, 0)`).
 
 ### Sous Etape 1.1 - Dessiner les lignes horizontales
 
-Nous allons tracer les lignes horizontales. Pour encadrer nos six lignes, il faut tracer `6 + 1` lignes horizontales. Nous utilisons une boucle `for` et nous utilisons la valeur d'incrément de la boucle ainsi que la taille des cases pour calculer la hauteur de la ligne à tracer. Pour l'instant, nous allons tracer des lignes depuis le bord gauche de l'écran (`0`), jusqu'au bord droit de l'écran (`width`).
+Nous allons tracer les lignes horizontales qui encadreront nos futures cases. Pour encadrer nos six rangées de jetons, il faut tracer `6 + 1` lignes horizontales. Nous utilisons une boucle `for` et nous utilisons la valeur d'incrément de la boucle ainsi que la taille des cases pour calculer la position verticale de la ligne à tracer.
+
+Dans un premier temps, nous allons tracer des lignes partant du bord gauche de l'écran (`0`) jusqu'au bord droit de l'écran (`width`).
 
 ```java
 void setup()
@@ -56,11 +64,13 @@ void draw()
 }
 ```
 
+![processing_lignes_horizontales.png](lignes horizontales)
+
 ### Sous-étape 1.2 - Réduire la taille des lignes
 
 Comme vous pouvez le voir si vous exécutez le code précédent, les lignes horizontales dépassent de la zone d'affichage.
 
-Pour les lignes horizontales, nous devons arrêter le tracé à la limite droite (soit nombre de colonnes x taille de case). On remplace la largeur de l'écran `width` par `7 * 20`.
+Pour les lignes horizontales, nous devons arrêter le tracé à la limite droite (soit *le nombre de colonnes de jetons* X *la taille de case*). On remplace la largeur de l'écran `width` par `7 * 20` (`7` étant le nombre de colonnes de jetons).
 
 ```java
 // dessine les 7 lignes horizontales
@@ -501,7 +511,7 @@ void mousePressed()
     // vérifier qu'on a bien cliqué dans le tableau
     if (colonneCliquee < NB_COLONNES && ligneCliquee < NB_LIGNES)
     {
-        
+        // ici on doit modifier le jeton correspondant dans le tableau
     }
 }
 ```
@@ -522,6 +532,8 @@ void mousePressed()
     }
 }
 ```
+
+### Etape 4.4 - Changement de joueur
 
 Pour l'instant, chaque clic passe le jeton associé à la valeur `1` ce qui dessine le jeton à l'écran en rouge. Nous voulons que chaque clic passe du joueur 1 au joueur 2 et inversement. Comme nous avons seulement deux joueurs, nous pouvons utiliser une variable de type `boolean` pouvant valoir soit `true` (vrai) soit `false` (faux). Définissons une variable `joueur1` en tête du programme.
 
@@ -736,5 +748,4 @@ void mousePressed()
         joueur1 = !joueur1;
     }
 }
-
 ```
